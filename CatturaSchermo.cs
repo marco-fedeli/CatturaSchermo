@@ -872,6 +872,23 @@ namespace CatturaSchermo
         }
 
         // La zona dell'immagine originale che la lente sta ingrandendo.
+        // Lente spostata: raggio del cerchietto sul punto ingrandito, e se si vede (è fuori dalla lente).
+        public float FocusRadius
+        {
+            get { RectangleF f = FocusRect(); return Math.Max(f.Width, f.Height) / 2f; }
+        }
+
+        public bool FocusVisible
+        {
+            get
+            {
+                if (Tool != Tool.Lente || !HasFocus) return false;
+                PointF c = LensCenter;
+                double dist = Math.Sqrt((c.X - Focus.X) * (c.X - Focus.X) + (c.Y - Focus.Y) * (c.Y - Focus.Y));
+                return dist > Math.Abs(B.X - A.X) / 2f + FocusRadius;
+            }
+        }
+
         public RectangleF FocusRect()
         {
             Rectangle r = Norm(A, B);
@@ -1354,6 +1371,7 @@ namespace CatturaSchermo
         int activeText = -1;            // testo che mostra cornice e pallino
         int activeBox = -1;             // riquadro/ovale che mostra cornice e quadratini
         int boxHandle = -1;             // quadratino trascinato (0-7), -1 = si sposta tutta la forma
+        bool focusDrag;                 // si sta spostando il cerchietto (punto ingrandito) di una lente
         TextBox textBox;          // casella aperta mentre si scrive un testo
         Point textAt;             // dove andrà il testo (coordinate dell'immagine)
         float textBoxSize;        // dimensione del carattere della casella aperta
@@ -1371,6 +1389,9 @@ namespace CatturaSchermo
         readonly ToolStripLabel zoomLabel;
         readonly ToolStripStatusLabel status, info;
         readonly System.Windows.Forms.Timer statusTimer = new System.Windows.Forms.Timer();
+        readonly System.Windows.Forms.Timer copiedTimer = new System.Windows.Forms.Timer();
+        ToolStripButton copyButton;
+        bool copiedShown;   // il pulsante mostra "✔ Copiato"
 
         public EditorForm(Bitmap img, string stampText)
         {
@@ -1420,8 +1441,8 @@ namespace CatturaSchermo
                 "Nascondi dati sensibili con i quadretti (8) — trascina sopra l'area",
                 "Hide sensitive data with pixelation (8) — drag over the area");
             AddToolButton(Tool.Lente, isz, "Lente", "Magnifier",
-                "Lente d'ingrandimento (9) — trascina sopra il dettaglio; trascina una lente già messa per spostarla",
-                "Magnifier (9) — drag over the detail; drag an existing magnifier to move it");
+                "Lente d'ingrandimento (9) — trascina sopra il dettaglio; trascina la lente per spostarla, il suo cerchietto per cambiare il punto ingrandito",
+                "Magnifier (9) — drag over the detail; drag the magnifier to move it, its small circle to change the magnified spot");
             strip.Items.Add(new ToolStripSeparator());
 
             for (int i = 0; i < Palette.Length; i++)
@@ -1503,15 +1524,33 @@ namespace CatturaSchermo
             save.Alignment = ToolStripItemAlignment.Right;
             save.Click += delegate { Save(); };
             Loc(delegate { save.Text = Lang.T("Salva…", "Save…"); save.ToolTipText = Lang.T("Salva come PNG o JPG (Ctrl+S)", "Save as PNG or JPG (Ctrl+S)"); });
+            // Copia: pulsante verde in grassetto, ben visibile; dopo il clic mostra per un attimo "✔ Copiato".
             var copy = new ToolStripButton();
+            copyButton = copy;
             copy.Alignment = ToolStripItemAlignment.Right;
             copy.Font = new Font(Font, FontStyle.Bold);
+            copy.AutoSize = false;
+            copy.Margin = new Padding((int)(4 * scale), 1, (int)(4 * scale), 2);
             copy.Click += delegate { Copy(); };
+            copy.Paint += (s, e) => PaintCopyButton(e.Graphics, scale);
             Loc(delegate
             {
-                copy.Text = Lang.T("Copia", "Copy");
+                copy.Text = copiedShown ? Lang.T("✔ Copiato", "✔ Copied") : Lang.T("Copia", "Copy");
                 copy.ToolTipText = Lang.T("Copia negli appunti, poi incolla con Ctrl+V dove vuoi (Ctrl+C)", "Copy to the clipboard, then paste it anywhere with Ctrl+V (Ctrl+C)");
+                // Larghezza fissa (quella della scritta più lunga), così gli altri pulsanti non si spostano.
+                int copyWidth = 0;
+                foreach (string t in new[] { "Copia", "Copy", "✔ Copiato", "✔ Copied" })
+                    copyWidth = Math.Max(copyWidth, TextRenderer.MeasureText(t, copy.Font).Width);
+                copy.Size = new Size(copyWidth + (int)(22 * scale), (int)(26 * scale));
             });
+            copiedTimer.Interval = 1600;
+            copiedTimer.Tick += delegate
+            {
+                copiedTimer.Stop();
+                copiedShown = false;
+                copy.Text = Lang.T("Copia", "Copy");
+                copy.Invalidate();
+            };
             var pin = new ToolStripButton();
             pin.Alignment = ToolStripItemAlignment.Right;
             pin.Click += delegate { Pin(); };
@@ -1681,8 +1720,8 @@ namespace CatturaSchermo
                 Flash(Lang.T("Trascina sopra nomi, email, numeri… da nascondere · lo spessore cambia la grandezza dei quadretti",
                     "Drag over names, emails, numbers… to hide · the thickness sets the size of the squares"));
             else if (t == Tool.Lente)
-                Flash(Lang.T("Trascina sopra il dettaglio · trascina una lente già messa per spostarla (con Maiusc ingrandisce il nuovo punto) · Sottile ×1,5 · Medio ×2 · Spesso ×3",
-                    "Drag over the detail · drag an existing magnifier to move it (with Shift it magnifies the new spot) · Thin ×1.5 · Medium ×2 · Thick ×3"));
+                Flash(Lang.T("Trascina sopra il dettaglio · trascina una lente per spostarla, il suo cerchietto per cambiare il punto ingrandito · Sottile ×1,5 · Medio ×2 · Spesso ×3",
+                    "Drag over the detail · drag a magnifier to move it, its small circle to change the magnified spot · Thin ×1.5 · Medium ×2 · Thick ×3"));
         }
 
         void SetColor(Color c)
@@ -2264,6 +2303,9 @@ namespace CatturaSchermo
             }
             if (tool == Tool.Lente)
             {
+                // Cerchietto di una lente spostata: si sposta il punto ingrandito, la lente resta ferma.
+                int hitFocus = HitLensFocus(p);
+                if (hitFocus >= 0) { focusDrag = true; BeginDrag(hitFocus, p, false); return; }
                 int hit = HitLens(p);
                 if (hit >= 0)
                 {
@@ -2328,6 +2370,13 @@ namespace CatturaSchermo
                 canvas.Invalidate();
                 return;
             }
+            if (moving != null && focusDrag)
+            {
+                float fx = movingOriginal.Focus.X + p.X - moveStart.X, fy = movingOriginal.Focus.Y + p.Y - moveStart.Y;
+                moving.Focus = new PointF(Math.Max(0, Math.Min(image.Width, fx)), Math.Max(0, Math.Min(image.Height, fy)));
+                canvas.Invalidate();
+                return;
+            }
             if (moving != null)
             {
                 int dx = p.X - moveStart.X, dy = p.Y - moveStart.Y;
@@ -2374,7 +2423,7 @@ namespace CatturaSchermo
                     return;
                 }
                 // Sopra una lente già messa il cursore diventa "sposta".
-                canvas.Cursor = tool == Tool.Lente && HitLens(p) >= 0 ? Cursors.SizeAll : Cursors.Cross;
+                canvas.Cursor = tool == Tool.Lente && (HitLensFocus(p) >= 0 || HitLens(p) >= 0) ? Cursors.SizeAll : Cursors.Cross;
                 return;
             }
             if (current.IsFreehand)
@@ -2426,7 +2475,9 @@ namespace CatturaSchermo
                 shapes[movingIndex] = movingOriginal;
                 rotating = false;
                 boxHandle = -1;
-                if (moved.A != movingOriginal.A || moved.B != movingOriginal.B || moved.Angle != movingOriginal.Angle)
+                focusDrag = false;
+                if (moved.A != movingOriginal.A || moved.B != movingOriginal.B || moved.Angle != movingOriginal.Angle ||
+                    moved.Focus != movingOriginal.Focus)
                     Record(new EditOp { Index = movingIndex, Before = movingOriginal, After = moved });
                 canvas.Invalidate();
                 return;
@@ -2450,6 +2501,19 @@ namespace CatturaSchermo
         }
 
         // Indice della lente sotto il punto (la più in alto), oppure -1.
+        int HitLensFocus(Point p)
+        {
+            for (int i = shapes.Count - 1; i >= 0; i--)
+            {
+                var s = shapes[i];
+                if (s.Tool != Tool.Lente || !s.FocusVisible) continue;
+                float r = s.FocusRadius + 6f / zoom;
+                float dx = p.X - s.Focus.X, dy = p.Y - s.Focus.Y;
+                if (dx * dx + dy * dy <= r * r) return i;
+            }
+            return -1;
+        }
+
         int HitLens(Point p)
         {
             for (int i = shapes.Count - 1; i >= 0; i--)
@@ -2617,6 +2681,28 @@ namespace CatturaSchermo
                 if (!ImageExport.Copy(this, bmp)) return;
             modified = false;
             Flash(Lang.T("✔ Copiata negli appunti — incollala con Ctrl+V dove vuoi.", "✔ Copied to the clipboard — paste it anywhere with Ctrl+V."));
+            copiedShown = true;
+            copyButton.Text = Lang.T("✔ Copiato", "✔ Copied");
+            copyButton.Invalidate();
+            copiedTimer.Stop();
+            copiedTimer.Start();
+        }
+
+        // Disegna il pulsante Copia: verde (più scuro sotto il mouse e quando è premuto; verde intenso dopo la copia).
+        void PaintCopyButton(Graphics g, float scale)
+        {
+            var b = copyButton;
+            var r = new Rectangle(0, 0, b.Width - 1, b.Height - 1);
+            Color bg = copiedShown ? Color.FromArgb(22, 128, 61)
+                     : b.Pressed ? Color.FromArgb(21, 115, 55)
+                     : b.Selected ? Color.FromArgb(30, 145, 70)
+                     : Color.FromArgb(40, 167, 69);
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            using (var path = IconArt.RoundRect(r, 4 * scale))
+            using (var br = new SolidBrush(bg))
+                g.FillPath(br, path);
+            TextRenderer.DrawText(g, b.Text, b.Font, r, Color.White,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
         }
 
         void Save()
@@ -2714,6 +2800,7 @@ namespace CatturaSchermo
                 image.Dispose();
                 if (view != null) view.Dispose();
                 statusTimer.Dispose();
+                copiedTimer.Dispose();
             }
             base.Dispose(disposing);
         }

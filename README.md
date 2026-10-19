@@ -42,7 +42,7 @@ Lo stesso metodo funziona per i piccoli fastidi operativi di un'azienda.
 | Testo | `6` | Testo con bordo leggibile su ogni sfondo: si sposta, si inclina e si ridimensiona |
 | Numeri | `7` | Cerchietti 1, 2, 3… che si numerano da soli, con la casella per la descrizione accanto |
 | Oscura | `8` | Pixela nomi, email, numeri e altri dati sensibili (il dato originale non resta nell'immagine) |
-| Lente | `9` | Cerchio che ingrandisce un dettaglio; spostandolo resta collegato al punto d'origine |
+| Lente | `9` | Cerchio che ingrandisce un dettaglio; spostandolo resta collegato al punto d'origine, e anche il punto ingrandito si può trascinare altrove |
 
 - 6 colori e 3 spessori (**Sottile / Medio / Spesso**, che per il testo sono le dimensioni).
 - **Annulla / Ripeti** (`Ctrl+Z` / `Ctrl+Y`) anche per spostamenti, rotazioni e ridimensionamenti.
@@ -51,7 +51,8 @@ Lo stesso metodo funziona per i piccoli fastidi operativi di un'azienda.
   (es. "18/10/2026 11:20 · Google Chrome"), che si toglie con un clic su **Data e ora**.
 
 **Dopo**
-- **Copia** (`Ctrl+C`): l'immagine va negli appunti, pronta da incollare con `Ctrl+V` in Word, email, WhatsApp, Teams…
+- **Copia** (`Ctrl+C`, il pulsante verde): l'immagine va negli appunti, pronta da incollare con `Ctrl+V` in Word, email, WhatsApp, Teams…
+  Il pulsante mostra per un attimo **✔ Copiato**. Con la cronologia degli appunti di Windows (`Win+V`) puoi tenere più catture e incollare quella che vuoi.
 - **Salva** (`Ctrl+S`): PNG, JPG o BMP.
 - **Appendi** (`Ctrl+P`): l'immagine resta **sullo schermo, sempre in primo piano**, con un bordo del colore scelto,
   mentre lavori in un'altra finestra. Si sposta trascinandola, la rotellina cambia la grandezza,

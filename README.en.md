@@ -44,7 +44,7 @@ The same approach works for the small operational annoyances of any business.
 | Text | `6` | Text with an outline that reads on any background: move, tilt and resize it |
 | Numbers | `7` | Circles 1, 2, 3… that number themselves, with a box for the description beside them |
 | Blur | `8` | Pixelates names, emails, numbers and other sensitive data (the original stays out of the image) |
-| Magnifier | `9` | Circle that magnifies a detail; when moved it stays linked to the original spot |
+| Magnifier | `9` | Circle that magnifies a detail; when moved it stays linked to the original spot, and the magnified spot can be dragged elsewhere too |
 
 - 6 colours and 3 thicknesses (**Thin / Medium / Thick**, which are the sizes for text).
 - **Undo / Redo** (`Ctrl+Z` / `Ctrl+Y`), including moves, rotations and resizes.
@@ -53,7 +53,8 @@ The same approach works for the small operational annoyances of any business.
   (e.g. "18/10/2026 11:20 · Google Chrome"), removed with one click on **Date/time**.
 
 **Then**
-- **Copy** (`Ctrl+C`): the image goes to the clipboard, ready to paste with `Ctrl+V` into Word, email, WhatsApp, Teams…
+- **Copy** (`Ctrl+C`, the green button): the image goes to the clipboard, ready to paste with `Ctrl+V` into Word, email, WhatsApp, Teams…
+  The button briefly shows **✔ Copied**. With the Windows clipboard history (`Win+V`) you can keep several captures and paste the one you want.
 - **Save** (`Ctrl+S`): PNG, JPG or BMP.
 - **Pin** (`Ctrl+P`): the image stays **on screen, always on top**, with a border in the chosen colour,
   while you work in another window. Drag it to move it, the wheel changes its size,
