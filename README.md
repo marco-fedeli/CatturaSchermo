@@ -51,9 +51,11 @@ Lo stesso metodo funziona per i piccoli fastidi operativi di un'azienda.
   (es. "18/10/2026 11:20 · Google Chrome"), che si toglie con un clic su **Data e ora**.
 
 **Dopo**
+- **Copia automatica**: appena catturi, l'immagine è già negli appunti, come se avessi premuto `Ctrl+C`: puoi incollare subito con `Ctrl+V`. Si spegne dal menu dell'icona (**Copia subito negli appunti**).
 - **Copia** (`Ctrl+C`, il pulsante verde): l'immagine va negli appunti, pronta da incollare con `Ctrl+V` in Word, email, WhatsApp, Teams…
   Il pulsante mostra per un attimo **✔ Copiato**. Con la cronologia degli appunti di Windows (`Win+V`) puoi tenere più catture e incollare quella che vuoi.
 - **Salva** (`Ctrl+S`): PNG, JPG o BMP.
+- **Lavagnina** (`Ctrl+L`): se sul PC hai anche Lavagnina (una lavagna per disegni a mano libera), un pulsante manda l'immagine, con i tuoi segni, sulla lavagna aperta.
 - **Appendi** (`Ctrl+P`): l'immagine resta **sullo schermo, sempre in primo piano**, con un bordo del colore scelto,
   mentre lavori in un'altra finestra. Si sposta trascinandola, la rotellina cambia la grandezza,
   `Ctrl` + rotellina la trasparenza, doppio clic la chiude.
@@ -80,7 +82,7 @@ Compare un'icona vicino all'orologio (se non la vedi, guarda tra le icone nascos
 | `Ctrl+Alt+F` | Catturi lo schermo intero |
 | Nella finestra di modifica | Scegli uno strumento e disegna; `Ctrl+C` copia, `Ctrl+S` salva, `Ctrl+P` appende |
 | Con Testo, Riquadro o Ovale attivo | Passa sopra una forma già messa: trascinala per spostarla, il pallino per ruotarla, i quadratini per ridimensionarla |
-| Clic destro sull'icona | Menu: cattura, avvio con Windows, lingua, esci |
+| Clic destro sull'icona | Menu: cattura, copia subito negli appunti, avvio con Windows, lingua, esci |
 
 ## Compilare dal codice sorgente
 

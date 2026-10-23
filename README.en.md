@@ -53,9 +53,11 @@ The same approach works for the small operational annoyances of any business.
   (e.g. "18/10/2026 11:20 · Google Chrome"), removed with one click on **Date/time**.
 
 **Then**
+- **Automatic copy**: as soon as you capture, the image is already on the clipboard, as if you had pressed `Ctrl+C`: paste right away with `Ctrl+V`. Turn it off from the tray menu (**Copy to clipboard right away**).
 - **Copy** (`Ctrl+C`, the green button): the image goes to the clipboard, ready to paste with `Ctrl+V` into Word, email, WhatsApp, Teams…
   The button briefly shows **✔ Copied**. With the Windows clipboard history (`Win+V`) you can keep several captures and paste the one you want.
 - **Save** (`Ctrl+S`): PNG, JPG or BMP.
+- **Lavagnina** (`Ctrl+L`): if you also have Lavagnina (a freehand whiteboard) on your PC, a button sends the image, with your marks, to the open whiteboard.
 - **Pin** (`Ctrl+P`): the image stays **on screen, always on top**, with a border in the chosen colour,
   while you work in another window. Drag it to move it, the wheel changes its size,
   `Ctrl` + wheel its transparency, double-click closes it.
@@ -82,7 +84,7 @@ An icon appears next to the clock (if you don't see it, look among the hidden ic
 | `Ctrl+Alt+F` | Capture the full screen |
 | In the editing window | Pick a tool and draw; `Ctrl+C` copies, `Ctrl+S` saves, `Ctrl+P` pins |
 | With Text, Box or Oval active | Hover over an existing shape: drag it to move it, the dot to rotate it, the small squares to resize it |
-| Right-click on the icon | Menu: capture, start with Windows, language, exit |
+| Right-click on the icon | Menu: capture, copy right away, start with Windows, language, exit |
 
 ## Building from source
 

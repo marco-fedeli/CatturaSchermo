@@ -88,6 +88,38 @@ namespace CatturaSchermo
         public static string T(string it, string english) { return en ? english : it; }
     }
 
+    // Preferenze ricordate tra un avvio e l'altro.
+    public static class Prefs
+    {
+        const string Key = @"Software\CatturaSchermo";
+
+        // Copiare l'immagine negli appunti appena catturata (attivo se non è mai stato spento).
+        public static bool AutoCopy
+        {
+            get
+            {
+                try
+                {
+                    using (var k = Registry.CurrentUser.OpenSubKey(Key))
+                    {
+                        object v = k == null ? null : k.GetValue("AutoCopy");
+                        return !(v is int) || (int)v != 0;
+                    }
+                }
+                catch { return true; }
+            }
+            set
+            {
+                try
+                {
+                    using (var k = Registry.CurrentUser.CreateSubKey(Key))
+                        k.SetValue("AutoCopy", value ? 1 : 0, RegistryValueKind.DWord);
+                }
+                catch { }
+            }
+        }
+    }
+
     // ------------------------------------------------------------------ icona dell'app
 
     public static class IconArt
@@ -186,6 +218,9 @@ namespace CatturaSchermo
             var auto = new ToolStripMenuItem();
             auto.Checked = IsAutostart();
             auto.Click += delegate { SetAutostart(!auto.Checked); auto.Checked = IsAutostart(); };
+            var autoCopy = new ToolStripMenuItem();
+            autoCopy.Checked = Prefs.AutoCopy;
+            autoCopy.Click += delegate { Prefs.AutoCopy = !Prefs.AutoCopy; autoCopy.Checked = Prefs.AutoCopy; };
             var language = new ToolStripMenuItem("Lingua / Language");
             var italian = new ToolStripMenuItem("Italiano", null, delegate { Lang.Set(false); });
             var english = new ToolStripMenuItem("English", null, delegate { Lang.Set(true); });
@@ -195,6 +230,7 @@ namespace CatturaSchermo
             menu.Items.Add(area);
             menu.Items.Add(full);
             menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add(autoCopy);
             menu.Items.Add(auto);
             menu.Items.Add(language);
             menu.Items.Add(new ToolStripSeparator());
@@ -206,6 +242,7 @@ namespace CatturaSchermo
                 tray.Text = Program.AppName + "  (Ctrl+Alt+S)";
                 area.Text = Lang.T("Cattura un'area", "Capture an area") + "\tCtrl+Alt+S";
                 full.Text = Lang.T("Cattura schermo intero", "Capture full screen") + "\tCtrl+Alt+F";
+                autoCopy.Text = Lang.T("Copia subito negli appunti", "Copy to clipboard right away");
                 auto.Text = Lang.T("Avvia con Windows", "Start with Windows");
                 exit.Text = Lang.T("Esci", "Exit");
                 italian.Checked = !Lang.En;
@@ -1381,7 +1418,7 @@ namespace CatturaSchermo
         Color color;
         readonly Panel host;
         readonly Canvas canvas;
-        readonly ToolStrip strip;
+        readonly ToolStrip strip, strip2;   // fila degli strumenti e fila delle azioni
         readonly Dictionary<Tool, ToolStripButton> toolButtons = new Dictionary<Tool, ToolStripButton>();
         readonly List<ToolStripButton> colorButtons = new List<ToolStripButton>();
         readonly ToolStripComboBox widthBox;
@@ -1415,6 +1452,13 @@ namespace CatturaSchermo
             strip.GripStyle = ToolStripGripStyle.Hidden;
             strip.ImageScalingSize = new Size(isz, isz);
             strip.Padding = new Padding((int)(4 * scale), (int)(3 * scale), 0, (int)(3 * scale));
+
+            // Seconda fila: annulla, zoom, data e ora e, a destra, Copia/Salva/Appendi/Lavagnina.
+            // Divise su due righe i pulsanti stanno anche su schermi Full HD con ingrandimento 125-150%.
+            strip2 = new ToolStrip();
+            strip2.GripStyle = ToolStripGripStyle.Hidden;
+            strip2.ImageScalingSize = new Size(isz, isz);
+            strip2.Padding = new Padding((int)(4 * scale), (int)(1 * scale), 0, (int)(3 * scale));
 
             AddToolButton(Tool.Evidenziatore, isz, "Evidenzia", "Highlight",
                 "Evidenzia un'area rettangolare (1)", "Highlight a rectangular area (1)");
@@ -1497,17 +1541,17 @@ namespace CatturaSchermo
                     Lang.T("  (clic per mostrarla/nasconderla)", "  (click to show/hide it)");
             });
             stampButton.CheckedChanged += delegate { stampOn = stampButton.Checked; modified = true; canvas.Invalidate(); };
-            strip.Items.Add(stampButton);
-            strip.Items.Add(new ToolStripSeparator());
+            strip2.Items.Add(stampButton);
+            strip2.Items.Add(new ToolStripSeparator());
 
             AddAction("Annulla", "Undo", "Annulla l'ultima modifica (Ctrl+Z)", "Undo the last change (Ctrl+Z)", Undo);
             AddAction("Ripeti", "Redo", "Ripeti (Ctrl+Y)", "Redo (Ctrl+Y)", Redo);
-            strip.Items.Add(new ToolStripSeparator());
+            strip2.Items.Add(new ToolStripSeparator());
             AddAction("−", "−", "Riduci (Ctrl+meno o Ctrl+rotellina)", "Zoom out (Ctrl+minus or Ctrl+wheel)", delegate { SetZoom(zoom / 1.25f); });
             zoomLabel = new ToolStripLabel("100%");
             Loc(delegate { zoomLabel.ToolTipText = Lang.T("Clic: dimensione reale / adatta alla finestra (Ctrl+0)", "Click: actual size / fit to window (Ctrl+0)"); });
             zoomLabel.Click += delegate { ToggleFit(); };
-            strip.Items.Add(zoomLabel);
+            strip2.Items.Add(zoomLabel);
             AddAction("+", "+", "Ingrandisci (Ctrl+più o Ctrl+rotellina)", "Zoom in (Ctrl+plus or Ctrl+wheel)", delegate { SetZoom(zoom * 1.25f); });
 
             // A destra (il primo aggiunto sta all'estremità): lingua, Salva, Copia, Appendi, Nuova cattura.
@@ -1564,11 +1608,42 @@ namespace CatturaSchermo
             again.Alignment = ToolStripItemAlignment.Right;
             again.Click += delegate { NewCapture(); };
             Loc(delegate { again.Text = Lang.T("Nuova cattura", "New capture"); again.ToolTipText = Lang.T("Nuova cattura (Ctrl+N)", "New capture (Ctrl+N)"); });
-            strip.Items.Add(langButton);
-            strip.Items.Add(save);
-            strip.Items.Add(copy);
-            strip.Items.Add(pin);
-            strip.Items.Add(again);
+            strip2.Items.Add(langButton);
+            strip2.Items.Add(save);
+            strip2.Items.Add(copy);
+            strip2.Items.Add(pin);
+
+            // Lavagnina: il pulsante c'è solo se il programma è installato
+            lavagninaPath = FindLavagnina();
+            if (lavagninaPath != null)
+            {
+                var lav = new ToolStripButton();
+                lav.Alignment = ToolStripItemAlignment.Right;
+                try
+                {
+                    using (var ico = Icon.ExtractAssociatedIcon(lavagninaPath))
+                    using (var big = ico.ToBitmap())
+                    {
+                        var small = new Bitmap(isz, isz);
+                        using (var g = Graphics.FromImage(small))
+                        {
+                            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                            g.DrawImage(big, 0, 0, isz, isz);
+                        }
+                        lav.Image = small;
+                    }
+                }
+                catch { }
+                lav.Click += delegate { SendToLavagnina(); };
+                Loc(delegate
+                {
+                    lav.Text = "Lavagnina";
+                    lav.ToolTipText = Lang.T("Apri l'immagine, con i segni, nella lavagna di Lavagnina (Ctrl+L)",
+                                             "Open the image, with your marks, on the Lavagnina whiteboard (Ctrl+L)");
+                });
+                strip2.Items.Add(lav);
+            }
+            strip2.Items.Add(again);
 
             // --- area di disegno
             host = new Panel();
@@ -1598,6 +1673,7 @@ namespace CatturaSchermo
             statusTimer.Tick += delegate { statusTimer.Stop(); ShowHint(); };
 
             Controls.Add(host);
+            Controls.Add(strip2);
             Controls.Add(strip);
             Controls.Add(bar);
 
@@ -1607,8 +1683,8 @@ namespace CatturaSchermo
 
             // --- dimensione iniziale: l'immagine intera, se ci sta
             Rectangle wa = Screen.FromPoint(Cursor.Position).WorkingArea;
-            int chromeW = 40, chromeH = strip.PreferredSize.Height + bar.PreferredSize.Height + 60;
-            int minW = Math.Max(strip.PreferredSize.Width + 30, (int)(560 * scale));
+            int chromeW = 40, chromeH = strip.PreferredSize.Height + strip2.PreferredSize.Height + bar.PreferredSize.Height + 60;
+            int minW = Math.Max(Math.Max(strip.PreferredSize.Width, strip2.PreferredSize.Width) + 30, (int)(560 * scale));
             int maxW = (int)(wa.Width * 0.9), maxH = (int)(wa.Height * 0.9);
             float fit = Math.Min(1f, Math.Min((maxW - chromeW) / (float)img.Width, (maxH - chromeH) / (float)img.Height));
             SetZoom(fit);
@@ -1649,7 +1725,7 @@ namespace CatturaSchermo
             var b = new ToolStripButton();
             b.Click += delegate { action(); };
             Loc(delegate { b.Text = Lang.T(it, en); b.ToolTipText = Lang.T(tipIt, tipEn); });
-            strip.Items.Add(b);
+            strip2.Items.Add(b);
         }
 
         static Bitmap GlobeIcon(int s)
@@ -1672,7 +1748,8 @@ namespace CatturaSchermo
         {
             status.Text = Lang.T(
                 "Disegna sull'immagine · Ctrl+Z annulla, Ctrl+Y ripeti · Ctrl+C copia per incollarla altrove · Ctrl+S salva · Ctrl+P appendi",
-                "Draw on the image · Ctrl+Z undo, Ctrl+Y redo · Ctrl+C copy to paste it elsewhere · Ctrl+S save · Ctrl+P pin");
+                "Draw on the image · Ctrl+Z undo, Ctrl+Y redo · Ctrl+C copy to paste it elsewhere · Ctrl+S save · Ctrl+P pin") +
+                (lavagninaPath != null ? " · Ctrl+L Lavagnina" : "");
         }
 
         void Flash(string msg)
@@ -1690,6 +1767,24 @@ namespace CatturaSchermo
             Activate();
             TopMost = false;
             canvas.Focus();
+            if (Prefs.AutoCopy) CopyRightAway();
+        }
+
+        // Appena catturata, l'immagine va negli appunti (come se si fosse già premuto Ctrl+C).
+        void CopyRightAway()
+        {
+            using (var bmp = Render())
+                if (!ImageExport.Copy(this, bmp)) return;
+            copiedShown = true;
+            copyButton.Text = Lang.T("✔ Copiato", "✔ Copied");
+            copyButton.Invalidate();
+            copiedTimer.Stop();
+            copiedTimer.Start();
+            status.Text = Lang.T("✔ Già negli appunti: incollala con Ctrl+V. Se aggiungi dei segni, premi di nuovo Copia.",
+                                 "✔ Already on the clipboard: paste it with Ctrl+V. If you add marks, press Copy again.");
+            statusTimer.Stop();
+            statusTimer.Interval = 7000;   // questo promemoria resta un po' di più
+            statusTimer.Start();
         }
 
         // --- strumenti e colori
@@ -2727,6 +2822,53 @@ namespace CatturaSchermo
             Close();
         }
 
+        // --- Lavagnina (C:\...\Lavagnina.exe): riceve l'immagine e la aggiunge alla lavagna aperta
+
+        string lavagninaPath;
+
+        static string FindLavagnina()
+        {
+            var candidates = new List<string>();
+            try
+            {
+                // Lavagnina scrive qui dov'è, a ogni avvio
+                using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Lavagnina"))
+                    if (k != null) candidates.Add(k.GetValue("ExePath") as string);
+            }
+            catch { }
+            string dir = Path.GetDirectoryName(typeof(EditorForm).Assembly.Location);
+            candidates.Add(Path.Combine(dir, "Lavagnina.exe"));
+            candidates.Add(Path.GetFullPath(Path.Combine(dir, @"..\Excalidraw\Lavagnina.exe")));
+            candidates.Add(Path.GetFullPath(Path.Combine(dir, @"..\Lavagnina\Lavagnina.exe")));
+            foreach (string c in candidates)
+                if (!string.IsNullOrEmpty(c) && File.Exists(c)) return c;
+            return null;
+        }
+
+        void SendToLavagnina()
+        {
+            CommitText();
+            try
+            {
+                string folder = Path.Combine(Path.GetTempPath(), "CatturaSchermo");
+                Directory.CreateDirectory(folder);
+                // Le immagini mandate i giorni scorsi non servono più
+                foreach (string old in Directory.GetFiles(folder, "*.png"))
+                    try { if (File.GetLastWriteTime(old) < DateTime.Now.AddDays(-1)) File.Delete(old); } catch { }
+
+                string file = Path.Combine(folder, Lang.T("Cattura_", "Capture_") + DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss") + ".png");
+                using (var bmp = Render()) bmp.Save(file, ImageFormat.Png);
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(lavagninaPath, "\"" + file + "\"") { UseShellExecute = false });
+                modified = false;
+                Flash(Lang.T("✔ Inviata a Lavagnina", "✔ Sent to Lavagnina"));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, Lang.T("Impossibile aprire Lavagnina:\n", "Could not open Lavagnina:\n") + ex.Message,
+                    Program.AppName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
         void NewCapture()
         {
             if (Program.RequestCapture == null) return;
@@ -2751,6 +2893,7 @@ namespace CatturaSchermo
                 case Keys.Control | Keys.Y: Redo(); return true;
                 case Keys.Control | Keys.N: NewCapture(); return true;
                 case Keys.Control | Keys.P: Pin(); return true;
+                case Keys.Control | Keys.L: if (lavagninaPath != null) SendToLavagnina(); return true;
                 case Keys.Control | Keys.Oemplus:
                 case Keys.Control | Keys.Add: SetZoom(zoom * 1.25f); return true;
                 case Keys.Control | Keys.OemMinus:
