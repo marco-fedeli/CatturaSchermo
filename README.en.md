@@ -57,7 +57,7 @@ The same approach works for the small operational annoyances of any business.
 - **Copy** (`Ctrl+C`, the green button): the image goes to the clipboard, ready to paste with `Ctrl+V` into Word, email, WhatsApp, Teams…
   The button briefly shows **✔ Copied**. With the Windows clipboard history (`Win+V`) you can keep several captures and paste the one you want.
 - **Save** (`Ctrl+S`): PNG, JPG or BMP.
-- **Lavagnina** (`Ctrl+L`): if you also have Lavagnina (a freehand whiteboard) on your PC, a button sends the image, with your marks, to the open whiteboard.
+- **Lavagnina** (`Ctrl+L`): if you also have [Lavagnina](https://github.com/marco-fedeli/Lavagnina) (a freehand whiteboard) on your PC, a button sends the image, with your marks, to the open whiteboard.
 - **Pin** (`Ctrl+P`): the image stays **on screen, always on top**, with a border in the chosen colour,
   while you work in another window. Drag it to move it, the wheel changes its size,
   `Ctrl` + wheel its transparency, double-click closes it.

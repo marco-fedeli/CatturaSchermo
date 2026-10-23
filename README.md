@@ -55,7 +55,7 @@ Lo stesso metodo funziona per i piccoli fastidi operativi di un'azienda.
 - **Copia** (`Ctrl+C`, il pulsante verde): l'immagine va negli appunti, pronta da incollare con `Ctrl+V` in Word, email, WhatsApp, Teams…
   Il pulsante mostra per un attimo **✔ Copiato**. Con la cronologia degli appunti di Windows (`Win+V`) puoi tenere più catture e incollare quella che vuoi.
 - **Salva** (`Ctrl+S`): PNG, JPG o BMP.
-- **Lavagnina** (`Ctrl+L`): se sul PC hai anche Lavagnina (una lavagna per disegni a mano libera), un pulsante manda l'immagine, con i tuoi segni, sulla lavagna aperta.
+- **Lavagnina** (`Ctrl+L`): se sul PC hai anche [Lavagnina](https://github.com/marco-fedeli/Lavagnina) (una lavagna per disegni a mano libera), un pulsante manda l'immagine, con i tuoi segni, sulla lavagna aperta.
 - **Appendi** (`Ctrl+P`): l'immagine resta **sullo schermo, sempre in primo piano**, con un bordo del colore scelto,
   mentre lavori in un'altra finestra. Si sposta trascinandola, la rotellina cambia la grandezza,
   `Ctrl` + rotellina la trasparenza, doppio clic la chiude.
